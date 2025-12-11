@@ -43,6 +43,24 @@
                             <h4 class="{% if data.change_percent < 0 %}text-danger{% else %}text-success{% endif %}">
                                 {{ data.change_percent }}%
                             </h4>
+                            <hr>
+                            <div class="mt-3">
+                                <p class="mb-1 fw-bold">Indicador RSI (1h):</p>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar 
+                                        {% if data.rsi > 70 %}bg-danger
+                                        {% elif data.rsi < 30 %}bg-success
+                                        {% else %}bg-warning text-dark{% endif %}" 
+                                        role="progressbar" 
+                                        style="width: {{ data.rsi }}%;" 
+                                        aria-valuenow="{{ data.rsi }}" aria-valuemin="0" aria-valuemax="100">
+                                        {{ data.rsi }}
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    {% if data.rsi > 70 %}🔥 Sobrecomprado (Cuidado){% elif data.rsi < 30 %}💎 Sobrevendido (Oportunidade){% else %}⚖️ Neutro{% endif %}
+                                </small>
+                            </div>
                             <small class="text-muted">Volume: {{ data.volume }}</small>
                         </div>
                     </div>

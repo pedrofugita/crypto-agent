@@ -1,28 +1,69 @@
+# crypto/services.py
 import requests
 import google.generativeai as genai
 import os
+import re
 from dotenv import load_dotenv
 
-# Configurações Gemini
+# Carrega variáveis de ambiente
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 
-if not api_key:
-    print("ERRO: Chave de API não encontrada no arquivo .env")
-else:
+if api_key:
     genai.configure(api_key=api_key)
 
-# Faz conexão com API da Binance
+def calculate_rsi(prices, period=14):
+    """Calcula o RSI matematicamente."""
+    if len(prices) < period + 1:
+        return 50 
+    gains = []
+    losses = []
+    for i in range(1, len(prices)):
+        delta = prices[i] - prices[i-1]
+        if delta > 0:
+            gains.append(delta)
+            losses.append(0)
+        else:
+            gains.append(0)
+            losses.append(abs(delta))
+    avg_gain = sum(gains[-period:]) / period
+    avg_loss = sum(losses[-period:]) / period
+    if avg_loss == 0: return 100
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
+    return round(rsi, 2)
+
+def extract_symbol_from_text(text):
+    """Extrai o símbolo da criptomoeda do texto do usuário."""
+    text = text.upper()
+    mapping = {
+        "BITCOIN": "BTCUSDT", "BTC": "BTCUSDT",
+        "ETHER": "ETHUSDT", "ETHEREUM": "ETHUSDT", "ETH": "ETHUSDT",
+        "SOLANA": "SOLUSDT", "SOL": "SOLUSDT",
+        "DOGE": "DOGEUSDT", "PEPE": "PEPEUSDT",
+        "XRP": "XRPUSDT", "RIPPLE": "XRPUSDT"
+    }
+    for key, value in mapping.items():
+        if key in text: return value
+    match = re.search(r'([A-Z]{3,5}USDT)', text)
+    if match: return match.group(1)
+    return None
+
 def get_binance_data(symbol):
-    symbol = symbol.upper() # Transforma entrada do usuário em par maiúsculo ex: BTCBRL
-    url = f"https://api.binance.com/api/v3/ticker/24hr?symbol={symbol}"
-    
+    """Busca dados na Binance."""
+    symbol = symbol.upper()
     try:
-        response = requests.get(url)
-        data = response.json()
-    
-        if 'code' in data:
-            return {"error": "Moeda não encontrada. Tente BTCUSDT ou ETHUSDT."}
+        # Dados atuais
+        url_ticker = f"https://api.binance.com/api/v3/ticker/24hr?symbol={symbol}"
+        resp_ticker = requests.get(url_ticker)
+        data = resp_ticker.json()
+        if 'code' in data: return {"error": "Moeda não encontrada."}
+
+        # Histórico para RSI
+        url_klines = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval=1h&limit=20"
+        resp_klines = requests.get(url_klines).json()
+        closing_prices = [float(candle[4]) for candle in resp_klines]
+        rsi_value = calculate_rsi(closing_prices)
 
         return {
             "symbol": data['symbol'],
@@ -31,35 +72,36 @@ def get_binance_data(symbol):
             "volume": float(data['volume']),
             "high": float(data['highPrice']),
             "low": float(data['lowPrice']),
+            "rsi": rsi_value,
         }
     except Exception as e:
-        return {"error": f"Erro de conexão: {str(e)}"}
+        return {"error": f"Erro Binance: {str(e)}"}
 
-def get_ai_analysis(market_data):
+def get_ai_analysis(market_data, user_question=""):
+    """
+    Gera análise usando Gemini 2.5 Flash.
+    """
 
-    # Envia os dados numéricos para o Gemini e pede uma análise qualitativa de acordo com o prompt abaixo.
-    model = genai.GenerativeModel('gemini-2.5-flash') # Existem outros modelos (gemini-pro, gemini-1.5-flash, gemini-1.0-pro, gemini-1.5-flash-001)
+    model = genai.GenerativeModel('models/gemini-2.5-flash') 
     
     prompt = f"""
-    Você é um especialista em Criptoativos.
-    Analise estes dados técnicos do {market_data['symbol']}:
+    Atue como um Consultor de Investimentos do Banco BV (High Frequency Trading).
     
-    - Preço Atual: $ {market_data['price']:.2f}
-    - Variação 24h: {market_data['change_percent']:.2f}%
-    - Volume: {market_data['volume']:.2f}
+    PERGUNTA DO USUÁRIO: "{user_question}"
     
-    Responda em PORTUGUÊS com formatação Markdown:
-    1. **Sentimento:** (Bullish/Bearish/Neutro)
-    2. **Análise Rápida:** Explique o que a variação indica.
-    3. **Recomendação Fictícia:** (Comprar/Vender/Aguardar) baseada APENAS nos dados.
+    DADOS TÉCNICOS ({market_data['symbol']}):
+    - Preço: $ {market_data['price']}
+    - Variação 24h: {market_data['change_percent']}%
+    - RSI (14h): {market_data['rsi']}
     
-    Seja conciso e profissional.
+    Responda em Markdown (PT-BR). Seja direto:
+    **Análise Técnica:** (Interprete o RSI e a tendência)
+    **Conclusão:** (Responda DIRETAMENTE à pergunta do usuário. Use linguagem profissional de banco.)
     """
     
     try:
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        # Log discreto apenas se der erro
-        print(f"Erro na API do Gemini: {e}")
-        return "Análise indisponível no momento. Tente novamente mais tarde."
+        print(f"🔴 ERRO TÉCNICO GEMINI: {e}")
+        return "Serviço de IA indisponível momentaneamente. Verifique os dados no painel."
