@@ -1,7 +1,7 @@
 # 🏦 Crypto Analyst Agent (POC)
 
 ## 📌 Sobre o Projeto
-Este projeto é uma **Prova de Conceito (POC)** de um Agente de IA para o mercado financeiro, desenvolvido como case prático para a vaga de **Estágio em Tecnologia & Dados do Banco BV**.
+Este projeto é uma **Prova de Conceito (POC)** de um Agente de IA para o mercado financeiro, desenvolvido como case prático para portfolium.
 
 O sistema combina um **Chatbot Interativo** com um **Dashboard de Dados em Tempo Real**. Ele atua como um "Analista Junior", orquestrando dados matemáticos precisos (Binance) com a capacidade interpretativa de LLMs avançadas (Google Gemini).
 
