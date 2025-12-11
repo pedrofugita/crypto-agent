@@ -3,50 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Agent AI</title>
+    <title>BV Intelligent Terminal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { background-color: #f0f2f5; height: 100vh; overflow: hidden; }
         .main-container { height: 100vh; display: flex; }
-        
-        /* Coluna da Esquerda (Chat) */
         .chat-sidebar { width: 35%; background: white; border-right: 1px solid #ddd; display: flex; flex-direction: column; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 20px; background: #eef1f6; }
         .message { padding: 10px 15px; margin-bottom: 10px; border-radius: 10px; max-width: 85%; font-size: 0.9rem; }
         .user-msg { background: #0047bb; color: white; align-self: flex-end; margin-left: auto; }
         .bot-msg { background: white; border: 1px solid #ddd; align-self: flex-start; }
-        
-        /* Coluna da Direita (Dashboard) */
         .dashboard-content { width: 65%; padding: 30px; overflow-y: auto; }
-        .big-card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.3s; }
+        .big-card { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: all 0.3s; margin-bottom: 20px; }
         .price-display { font-size: 3.5rem; font-weight: 800; letter-spacing: -1px; }
         .symbol-badge { background: #ffd400; color: #000; padding: 5px 15px; border-radius: 20px; font-weight: bold; text-transform: uppercase; }
+        /* Estilo dos botões de gráfico */
+        .chart-btn { font-size: 0.8rem; font-weight: 600; }
+        .chart-btn.active { background-color: #0047bb; color: white; border-color: #0047bb; }
     </style>
 </head>
 <body>
 
 <div class="container-fluid p-0 main-container">
-    
     <div class="chat-sidebar">
         <div class="p-3 bg-dark text-white d-flex align-items-center gap-2">
-            <span>🤖</span> <strong>AI Agent</strong>
+            <span>🤖</span> <strong>BV AI Agent</strong>
         </div>
-        
         <div class="chat-messages" id="chat-box">
             <div class="message bot-msg">
-                Olá! 👋 <br>Eu so um agente de Inteligência Artificial criado pelo Pedro Fugita.
-                <br> Peça para eu analisar qualquer cripto para que eu crie um relatório e atualize o dashboard ao lado.<br>
+                Olá! 👋 <br>Eu controlo este dashboard. Peça para eu analisar qualquer cripto.<br>
                 <em>Ex: "Como está o Ethereum?"</em>
             </div>
         </div>
-        
         <div class="p-3 bg-white border-top">
             <div class="input-group">
                 <input type="text" id="user-input" class="form-control" placeholder="Digite o nome da moeda..." onkeypress="handleEnter(event)">
                 <button class="btn btn-primary" onclick="sendMessage()">Enviar</button>
             </div>
             <div id="loading" class="text-center mt-2 small text-muted" style="display:none;">
-                Consultando mercado... ⏳
+                Consultando Binance & Gemini... ⏳
             </div>
         </div>
     </div>
@@ -55,15 +51,14 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold mb-0">Market Overview</h2>
-                <small class="text-muted">Dados em tempo real (Binance)</small>
+                <small class="text-muted">Dados em tempo real via Binance API</small>
             </div>
             <span class="symbol-badge" id="live-symbol">{{ data.symbol }}</span>
         </div>
 
-        <div class="row mb-4">
+        <div class="row">
             <div class="col-12">
                 <div class="big-card">
-                    <h6 class="text-muted text-uppercase">Preço Atual</h6>
                     <div class="d-flex align-items-center gap-3">
                         <div class="price-display" id="live-price">${{ data.price }}</div>
                         <div id="live-change-container" class="px-3 py-1 rounded fs-5 fw-bold 
@@ -76,36 +71,43 @@
         </div>
 
         <div class="row">
-            <div class="col-md-6">
-                <div class="big-card h-100">
-                    <h5 class="fw-bold mb-3">Indicador RSI (14h)</h5>
-                    <h2 class="display-4 fw-bold mb-3" id="live-rsi-val">{{ data.rsi }}</h2>
-                    
-                    <div class="progress" style="height: 15px;">
-                        <div id="rsi-bar" class="progress-bar" role="progressbar" 
-                             style="width: {{ data.rsi }}%;" 
-                             aria-valuenow="{{ data.rsi }}" aria-valuemin="0" aria-valuemax="100">
+            <div class="col-12">
+                <div class="big-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold m-0">Variação de Preço</h5>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary chart-btn active" onclick="loadChart('24h', this)">24H</button>
+                            <button type="button" class="btn btn-outline-secondary chart-btn" onclick="loadChart('7d', this)">7D</button>
+                            <button type="button" class="btn btn-outline-secondary chart-btn" onclick="loadChart('30d', this)">30D</button>
+                            <button type="button" class="btn btn-outline-secondary chart-btn" onclick="loadChart('1y', this)">1Y</button>
+                            <button type="button" class="btn btn-outline-secondary chart-btn" onclick="loadChart('all', this)">ALL</button>
                         </div>
                     </div>
-                    <small class="text-muted mt-2 d-block" id="rsi-status">
-                        Aguardando análise...
-                    </small>
+                    <div style="height: 300px;">
+                        <canvas id="priceChart"></canvas>
+                    </div>
                 </div>
             </div>
+        </div>
 
+        <div class="row">
+            <div class="col-md-6">
+                <div class="big-card h-100">
+                    <h5 class="fw-bold mb-3">RSI (14h)</h5>
+                    <h2 class="display-4 fw-bold mb-3" id="live-rsi-val">{{ data.rsi }}</h2>
+                    <div class="progress" style="height: 15px;">
+                        <div id="rsi-bar" class="progress-bar" role="progressbar" style="width: {{ data.rsi }}%;"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block" id="rsi-status">Aguardando...</small>
+                </div>
+            </div>
             <div class="col-md-6">
                 <div class="big-card h-100">
                     <h5 class="fw-bold mb-3">Detalhes 24h</h5>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Máxima:</span> <strong id="live-high">${{ data.high }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Mínima:</span> <strong id="live-low">${{ data.low }}</strong>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between">
-                            <span>Volume:</span> <strong id="live-vol">{{ data.volume }}</strong>
-                        </li>
+                        <li class="list-group-item d-flex justify-content-between"><span>Máxima:</span> <strong id="live-high">${{ data.high }}</strong></li>
+                        <li class="list-group-item d-flex justify-content-between"><span>Mínima:</span> <strong id="live-low">${{ data.low }}</strong></li>
+                        <li class="list-group-item d-flex justify-content-between"><span>Volume:</span> <strong id="live-vol">{{ data.volume }}</strong></li>
                     </ul>
                 </div>
             </div>
@@ -114,9 +116,69 @@
 </div>
 
 <script>
-    // Inicializa a cor da barra RSI ao carregar
-    updateRsiColor({{ data.rsi }});
+    let currentSymbol = "{{ data.symbol }}";
+    let myChart = null; // Variável global para o gráfico
 
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', () => {
+        updateRsiColor({{ data.rsi }});
+        loadChart('24h', null); // Carrega gráfico inicial
+    });
+
+    // --- FUNÇÃO DO GRÁFICO ---
+    async function loadChart(period, btnElement) {
+        // Atualiza botões visuais
+        if (btnElement) {
+            document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+        }
+
+        // Busca dados na nossa API nova
+        const response = await fetch(`/api/chart/?symbol=${currentSymbol}&period=${period}`);
+        const result = await response.json();
+        const prices = result.data.map(d => d.price);
+        const labels = result.data.map(d => d.time);
+
+        // Renderiza
+        const ctx = document.getElementById('priceChart').getContext('2d');
+        
+        // Se já existe gráfico, destrói para criar o novo
+        if (myChart) myChart.destroy();
+
+        // Cria gradiente bonito (Estilo Banco)
+        let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(0, 71, 187, 0.3)'); // Azul BV
+        gradient.addColorStop(1, 'rgba(0, 71, 187, 0)');
+
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Preço (USD)',
+                    data: prices,
+                    borderColor: '#0047bb',
+                    backgroundColor: gradient,
+                    borderWidth: 2,
+                    pointRadius: 0, // Remove bolinhas para linha limpa
+                    fill: true,
+                    tension: 0.1 // Linha levemente curva
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }, // Esconde legenda feia
+                scales: {
+                    x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } },
+                    y: { grid: { color: '#f0f0f0' } }
+                },
+                interaction: { intersect: false, mode: 'index' }
+            }
+        });
+    }
+
+    // --- FUNÇÕES DO CHAT (IGUAIS ANTES) ---
     function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
 
     async function sendMessage() {
@@ -124,10 +186,8 @@
         const text = input.value.trim();
         const chatBox = document.getElementById('chat-box');
         const loading = document.getElementById('loading');
-
         if (!text) return;
 
-        // Adiciona msg do usuário
         chatBox.innerHTML += `<div class="message user-msg">${text}</div>`;
         input.value = '';
         loading.style.display = 'block';
@@ -139,25 +199,22 @@
                 body: JSON.stringify({ message: text })
             });
             const data = await res.json();
-
-            // Adiciona resposta do Bot
             chatBox.innerHTML += `<div class="message bot-msg">${data.response}</div>`;
             
-            // SE A API TROUXE DADOS NOVOS, ATUALIZA O DASHBOARD (MÁGICA AQUI)
             if (data.update_dashboard && data.data) {
                 updateDashboard(data.data);
             }
-
         } catch (err) {
-            chatBox.innerHTML += `<div class="message bot-msg text-danger">Erro de conexão.</div>`;
+            chatBox.innerHTML += `<div class="message bot-msg text-danger">Erro.</div>`;
         }
-
         loading.style.display = 'none';
         chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     function updateDashboard(data) {
-        // 1. Atualiza Textos
+        currentSymbol = data.symbol; // Atualiza símbolo global
+        
+        // Atualiza textos
         document.getElementById('live-symbol').innerText = data.symbol;
         document.getElementById('live-price').innerText = "$" + data.price;
         document.getElementById('live-change').innerText = data.change_percent;
@@ -166,36 +223,33 @@
         document.getElementById('live-low').innerText = "$" + data.low;
         document.getElementById('live-vol').innerText = data.volume;
 
-        // 2. Atualiza Cores e Barras (Dinâmico)
+        // Atualiza cor da variação
         const changeContainer = document.getElementById('live-change-container');
-        if (data.change_percent < 0) {
-            changeContainer.className = "px-3 py-1 rounded fs-5 fw-bold bg-danger bg-opacity-10 text-danger";
-        } else {
-            changeContainer.className = "px-3 py-1 rounded fs-5 fw-bold bg-success bg-opacity-10 text-success";
-        }
+        changeContainer.className = data.change_percent < 0 
+            ? "px-3 py-1 rounded fs-5 fw-bold bg-danger bg-opacity-10 text-danger" 
+            : "px-3 py-1 rounded fs-5 fw-bold bg-success bg-opacity-10 text-success";
 
-        // 3. Atualiza Barra RSI
-        const rsiBar = document.getElementById('rsi-bar');
-        rsiBar.style.width = data.rsi + "%";
+        // Atualiza RSI
+        document.getElementById('rsi-bar').style.width = data.rsi + "%";
         updateRsiColor(data.rsi);
+
+        // RECARREGA O GRÁFICO AUTOMATICAMENTE COM O NOVO ATIVO
+        loadChart('24h', document.querySelector('.chart-btn')); 
     }
 
     function updateRsiColor(value) {
         const bar = document.getElementById('rsi-bar');
         const status = document.getElementById('rsi-status');
-        
-        // Remove classes antigas
-        bar.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-dark');
-        
+        bar.className = 'progress-bar'; 
         if (value > 70) {
             bar.classList.add('bg-danger');
-            status.innerHTML = "🔥 <strong>Sobrecomprado:</strong> Alta probabilidade de correção (Venda).";
+            status.innerHTML = "🔥 Sobrecomprado";
         } else if (value < 30) {
             bar.classList.add('bg-success');
-            status.innerHTML = "💎 <strong>Sobrevendido:</strong> O preço está descontado (Compra).";
+            status.innerHTML = "💎 Sobrevendido";
         } else {
             bar.classList.add('bg-warning');
-            status.innerHTML = "⚖️ <strong>Neutro:</strong> Mercado sem tendência definida.";
+            status.innerHTML = "⚖️ Neutro";
         }
     }
 </script>

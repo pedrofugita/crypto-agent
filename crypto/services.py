@@ -105,3 +105,34 @@ def get_ai_analysis(market_data, user_question=""):
     except Exception as e:
         print(f"🔴 ERRO TÉCNICO GEMINI: {e}")
         return "Serviço de IA indisponível momentaneamente. Verifique os dados no painel."
+    
+from datetime import datetime
+
+def get_historical_candles(symbol, interval, limit=100):
+    """
+    Busca dados históricos para o gráfico.
+    - symbol: par (ex: BTCUSDT)
+    - interval: 1h, 1d, 1w, 1M (Binance format)
+    - limit: quantos pontos de dados trazer
+    """
+    symbol = symbol.upper()
+    url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
+    
+    try:
+        response = requests.get(url)
+        data = response.json()
+        
+        # A Binance retorna uma lista de listas. O índice 0 é tempo, o 4 é preço de fechamento.
+        formatted_data = []
+        for candle in data:
+            # Timestamp vem em ms, convertemos para segundos
+            ts = int(candle[0]) / 1000 
+            # Formata a data bonitinha
+            date_str = datetime.fromtimestamp(ts).strftime('%d/%m/%Y %H:%M')
+            price = float(candle[4])
+            formatted_data.append({'time': date_str, 'price': price})
+            
+        return formatted_data
+    except Exception as e:
+        print(f"Erro Chart: {e}")
+        return []
