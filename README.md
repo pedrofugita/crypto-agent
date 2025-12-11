@@ -33,7 +33,7 @@ O sistema atua como um **Agente Analista de Mercado**, orquestrando dados estrut
    cd bv-crypto-agent
    ```
 
-2. **Crie o ambiente virtual:***
+2. **Crie o ambiente virtual:**
     ```bash
     python -m venv venv
     # Windows:
@@ -42,17 +42,18 @@ O sistema atua como um **Agente Analista de Mercado**, orquestrando dados estrut
     source venv/bin/activate
     ```
 
-3. **Instale as dependências:***
+3. **Instale as dependências:**
     ```bash
     pip install django requests google-generativeai python-dotenv markdown
     ```
 
-4. **Crie o ambiente virtual:***
+4. **Configure as Variáveis de Ambiente:**
+    Crie um arquivo .env na raiz e adicione sua chave:
     ```bash
     GOOGLE_API_KEY=sua_chave_aqui
     ```
 
-5. **Crie o ambiente virtual:***
+5. **Execute o servidor:**
     ```bash
     python manage.py runserver
     ```
