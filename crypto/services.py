@@ -4,6 +4,7 @@ import google.generativeai as genai
 import os
 import re
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -104,9 +105,7 @@ def get_ai_analysis(market_data, user_question=""):
         return response.text
     except Exception as e:
         print(f"🔴 ERRO TÉCNICO GEMINI: {e}")
-        return "Serviço de IA indisponível momentaneamente. Verifique os dados no painel."
-    
-from datetime import datetime
+        return "Serviço de IA indisponível momentaneamente. Limite de solicitações atingido."
 
 def get_historical_candles(symbol, interval, limit=100):
     """
