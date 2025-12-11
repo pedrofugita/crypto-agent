@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f9; }
+        .card-custom { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header-bv { background-color: #ffd400; color: #333; padding: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header-bv text-center mb-5">
+        <h2>💰 - Agente de Crypto IA</h2>
+    </div>
+
+    <div class="container">
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-6">
+                <form class="d-flex" method="get">
+                    <input class="form-control me-2" type="text" name="symbol" placeholder="Ex: ETHUSDT, SOLUSDT" value="{{ symbol }}" style="text-transform:uppercase">
+                    <button class="btn btn-dark" type="submit">Analisar</button>
+                </form>
+            </div>
+        </div>
+
+        {% if data.error %}
+            <div class="alert alert-danger text-center">{{ data.error }}</div>
+        {% else %}
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card card-custom h-100">
+                        <div class="card-body">
+                            <h5 class="card-title text-muted">Dados de Mercado</h5>
+                            <h1 class="display-5 fw-bold">{{ data.symbol }}</h1>
+                            <h2 class="text-primary">$ {{ data.price }}</h2>
+                            
+                            <hr>
+                            <p class="mb-1">Variação 24h:</p>
+                            <h4 class="{% if data.change_percent < 0 %}text-danger{% else %}text-success{% endif %}">
+                                {{ data.change_percent }}%
+                            </h4>
+                            <small class="text-muted">Volume: {{ data.volume }}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8 mb-3">
+                    <div class="card card-custom h-100">
+                        <div class="card-header bg-white fw-bold">
+                            🧠 Análise do Agente (Gemini AI)
+                        </div>
+                        <div class="card-body">
+                            {{ report|safe }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>
