@@ -13,7 +13,7 @@ O sistema atua como um **Agente Analista de Mercado**, orquestrando dados estrut
 
 ## 🛠 Tech Stack
 * **Backend:** Python 3.12+, Django 5.x
-* **Artificial Intelligence:** Google Generative AI (Gemini 1.5 Flash)
+* **Artificial Intelligence:** Google Generative AI (Google Gemini 2.5 Flash)
 * **Integração:** RESTful API (Binance)
 * **Frontend:** Django Templates + Bootstrap 5
 * **Environment Management:** Python-dotenv (Segurança de chaves)

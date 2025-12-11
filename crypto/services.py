@@ -38,7 +38,7 @@ def get_binance_data(symbol):
 def get_ai_analysis(market_data):
 
     # Envia os dados numéricos para o Gemini e pede uma análise qualitativa de acordo com o prompt abaixo.
-    model = genai.GenerativeModel('gemini-1.5-flash') # Existem outros modelos
+    model = genai.GenerativeModel('gemini-2.5-flash') # Existem outros modelos (gemini-pro, gemini-1.5-flash, gemini-1.0-pro, gemini-1.5-flash-001)
     
     prompt = f"""
     Você é um especialista em Criptoativos.
@@ -60,4 +60,6 @@ def get_ai_analysis(market_data):
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        return "A IA está indisponível no momento. Tente novamente."
+        # Log discreto apenas se der erro
+        print(f"Erro na API do Gemini: {e}")
+        return "Análise indisponível no momento. Tente novamente mais tarde."
